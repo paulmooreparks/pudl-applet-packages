@@ -76,24 +76,43 @@ function check(dir) {
     }
     if (m.tags !== undefined && (!Array.isArray(m.tags) || m.tags.some(t => typeof t !== 'string'))) { problem(name, 'tags must be a list of text'); }
     if (m.bundle !== undefined) {
-        if (!Array.isArray(m.bundle) || m.bundle.some(s => typeof s !== 'string' || !BUNDLE.test(s))) { problem(name, 'bundle may list only scripts beside the package, such as ../shared/input.js'); }
-        else { for (const s of m.bundle) { if (!fs.existsSync(path.join(dir, s))) { problem(name, 'bundle names ' + s + ', which is not beside the package'); } } }
+        const lists = bundles(m);
+        if (!lists) { problem(name, 'bundle must be a list of scripts, or an object of a script in the package to such a list'); }
+        else {
+            for (const [target, list] of Object.entries(lists)) {
+                if (!FILE.test(target) || !fs.existsSync(path.join(dir, target))) { problem(name, 'bundle puts scripts in front of ' + target + ', which is not in the package'); }
+                if (!Array.isArray(list) || list.some(s => typeof s !== 'string' || !BUNDLE.test(s))) { problem(name, 'bundle may list only scripts beside the package, such as ../shared/input.js'); continue; }
+                for (const s of list) { if (!fs.existsSync(path.join(dir, s))) { problem(name, 'bundle names ' + s + ', which is not beside the package'); } }
+            }
+        }
     }
     const known = ['name', 'title', 'version', 'description', 'license', 'src', 'css', 'icon', 'page', 'window', 'handles', 'instances', 'actions', 'continuity', 'needs', 'wants', 'shared', 'bundle', 'tags'];
     for (const k of Object.keys(m)) { if (!known.includes(k)) { problem(name, k + ' is not a manifest field'); } }
     return m;
 }
 
+/* A manifest's bundle as { script: [scripts in front of it] }: a plain
+   list is src's. Null when it is neither shape. */
+function bundles(m) {
+    if (m.bundle === undefined) { return {}; }
+    if (Array.isArray(m.bundle)) { return typeof m.src === 'string' ? { [m.src]: m.bundle } : null; }
+    return typeof m.bundle === 'object' && m.bundle !== null ? m.bundle : null;
+}
+
 /* What makes a script portable: it asks pudlHost for the host's services
-   and reaches no address of a particular site. */
-function portable(dir, name) {
+   and reaches no address of a particular site. The scripts a package
+   bundles are checked with it, wherever they live, unless under vendor. */
+function portable(dir, name, m) {
     const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? (e.name === 'vendor' ? [] : walk(path.join(d, e.name))) : e.name.endsWith('.js') ? [path.join(d, e.name)] : []);
-    for (const f of walk(dir)) {
+    const bundled = Object.values(bundles(m) || {}).flat().filter(s => typeof s === 'string').map(s => path.resolve(dir, s))
+        .filter(f => !f.split(path.sep).includes('vendor') && fs.existsSync(f));
+    for (const f of new Set(walk(dir).concat(bundled))) {
         const text = fs.readFileSync(f, 'utf8');
-        const rel = path.relative(dir, f);
+        const rel = path.relative(dir, f).split(path.sep).join('/');
         let m;
         if ((m = /window\.pc[A-Z]\w*|\bpc(SiteFs|Config|Snapshot|AppletIdentity|AppletAction|Actions)\b/.exec(text))) { problem(name, rel + ' reaches a host\'s own global, ' + m[0] + '; ask pudlHost instead'); }
         if ((m = /['"`]\/api\//.exec(text))) { problem(name, rel + ' reaches a fixed /api/ address; ask pudlHost instead'); }
+        if ((m = /['"`]pc:[a-z-]+['"`]/.exec(text))) { problem(name, rel + ' listens for or sends a host\'s own event, ' + m[0] + '; ask pudlHost instead'); }
     }
 }
 
@@ -113,7 +132,7 @@ const packages = [], shared = new Set();
 for (const dir of dirs) {
     const m = check(dir);
     if (!m) { continue; }
-    portable(dir, m.name);
+    portable(dir, m.name, m);
     packages.push({ dir, m });
     for (const s of m.shared || []) { shared.add(path.resolve(dir, s)); }
 }
@@ -122,11 +141,14 @@ if (problems.length) { problems.forEach(p => console.error(p)); process.exit(1);
 fs.rmSync(out, { recursive: true, force: true });
 for (const { dir, m } of packages) {
     copyDir(dir, path.join(out, m.name));
-    /* The scripts a manifest bundles go in front of its src, so the
-       installed script is one file; the built manifest no longer says so. */
-    if (m.bundle && m.bundle.length) {
-        const parts = m.bundle.map(s => fs.readFileSync(path.join(dir, s), 'utf8')).concat(fs.readFileSync(path.join(dir, m.src), 'utf8'));
-        fs.writeFileSync(path.join(out, m.name, m.src), parts.join('\n'));
+    /* The scripts a manifest bundles go in front of the script they are
+       for, src unless it says otherwise, so each installed script is one
+       file; the built manifest no longer says so. */
+    if (m.bundle !== undefined) {
+        for (const [target, list] of Object.entries(bundles(m))) {
+            const parts = list.map(s => fs.readFileSync(path.join(dir, s), 'utf8')).concat(fs.readFileSync(path.join(dir, target), 'utf8'));
+            fs.writeFileSync(path.join(out, m.name, target), parts.join('\n'));
+        }
         const built = Object.assign({}, m);
         delete built.bundle;
         fs.writeFileSync(path.join(out, m.name, 'applet.json'), JSON.stringify(built, null, 2) + '\n');

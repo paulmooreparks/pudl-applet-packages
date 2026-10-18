@@ -17,7 +17,16 @@ hello/
 
 `applet.json` is the one file a host reads. The example in `examples/hello` shows every field; the schema says what each means. The name is the folder's name, the window key and the last part of the page's address. The version is the cache stamp of the applet's files, so a host never edits a version by hand.
 
-A collection is a repo whose packages share code. The shared folder sits beside the packages and each package that uses it says so in `shared`, and the packing tool copies it alongside them, so an applet loads it with a relative address such as `../shared/input.js`.
+A collection is a repo whose packages share code. The shared scripts sit in a folder beside the packages, and a package lists the ones it uses in `bundle`, which the packing tool writes in front of the package's script, so each installed package is complete in its own folder and a host can install one without the others. `bundle` as a list is for `src`; as an object it says which of the package's scripts each list goes in front of, so an actions module can carry the same engine as the applet:
+
+```json
+"bundle": {
+  "barcode-tool.js": ["../engine/barcode-engine.js", "../engine/barcode-library.js"],
+  "actions.js": ["../engine/barcode-engine.js"]
+}
+```
+
+A folder named in `shared` is instead copied beside the packages and loaded at run time by a relative address such as `../shared/input.js`. It lands in the host's `wwwroot/applets` under its own name, beside every other collection's, so give it a name no other collection would use.
 
 ## The host interface
 
@@ -29,12 +38,17 @@ An applet may use PUDL's runtime (`pudlApplets`, `pudlWindows`, the theme events
 | `action(root, selector, label)` | a menu item that presses a button in the applet |
 | `pages` | where applet pages are, such as `/page/` |
 | `snapshot` | `join(root, take)` and `leave`, state kept across a reload (optional) |
-| `fs` | `readText(path)`, `writeText(path, text)` and `mkdir(path)` under `~` (optional) |
+| `fs` | `readText(path)`, `writeText(path, text)` and `mkdir(path)` under `~`, `onChange(fn)`, and where the host has file dialogs, `open(options)` and `save(options)` (optional, and each member optional within it) |
 | `config` | `load`, `get`, `set` and `onChange` for the applet's settings (optional) |
+| `service(name)` | the address of a service the host offers under that name, ending in `/`, or `null` |
+
+`fs.open({ title, accept, start, host, check })` shows the host's own Open dialog and resolves to `{ path, name, text }` for one of the host's files, `{ name, text }` for one from the reader's computer, or `null`. `fs.save({ title, name, blob, start, host, check })` shows its Save as dialog, writes the blob, and resolves to `{ path }`, `{ download: name }` when the reader chose to download it, or `null`; it rejects with the reason a write failed. In both, `check(path)` gives the reason a file won't do, or `null`. `fs.onChange(fn)` calls `fn()` after any of the host's files changes, here or in another tab, and returns a function that stops it. An applet without `open` takes a file from the reader's computer, and without `save` downloads.
+
+A service is something on the host's server an applet may call, such as the proxy the barcode scanner looks products up through, which it asks for as `service('barcode-products')`. A host builds `service` from a map: `pudlHostKit.host({ services: { 'barcode-products': '/api/barcode-products/' } })`. An applet whose host has no such service leaves out what needs it.
 
 A service the host lacks is missing from the object, and the applet does without it. A manifest's `needs` lists the services the applet cannot run without; `wants` lists the ones it uses when present. An action module calls `pudlActions.provide(id, handlers)`.
 
-Nothing in a package may reach a host's own globals or a fixed `/api/` address. `tools/pack.js` refuses a package that does.
+Nothing in a package may reach a host's own globals, a fixed `/api/` address, or a host's own events (names such as `pc:fs-change`). `tools/pack.js` refuses a package that does, checking the scripts it bundles as well as its own.
 
 ## A host
 
@@ -58,7 +72,7 @@ A page with no server does it in the browser:
 node tools/pack.js <collection dir> [<out dir>]
 ```
 
-checks each package's manifest and portability and copies the packages, with their shared folders, to `dist/`. A host installs a release by copying `dist/` into `wwwroot/applets/`.
+checks each package's manifest and portability, writes the scripts each package bundles in front of the scripts they are for, and copies the packages, with any shared folders, to `dist/`. A host installs a release by copying `dist/` into `wwwroot/applets/`.
 
 ## Licence
 

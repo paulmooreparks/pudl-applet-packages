@@ -14,6 +14,7 @@
     "license": { "type": "string", "description": "An SPDX identifier, such as Apache-2.0." },
     "src": { "$ref": "#/$defs/file", "description": "The script, which calls pudlApplets.register(name, …)." },
     "css": { "$ref": "#/$defs/file" },
+    "icon": { "$ref": "#/$defs/file", "description": "A small full-colour picture of the applet, such as an SVG of 32 by 32, for the launch menu and the window's title bar." },
     "page": {
       "type": "object", "additionalProperties": false,
       "properties": {

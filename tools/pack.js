@@ -49,7 +49,7 @@ function check(dir) {
     if (typeof m.name === 'string' && !NAME.test(m.name)) { problem(name, 'name must be lower-case letters, digits and hyphens, starting with a letter'); }
     if (m.name !== name) { problem(name, 'name must be the folder\'s name, ' + name); }
     file('src', m.src); if (m.src === undefined) { problem(name, 'src is missing'); }
-    file('css', m.css); file('actions', m.actions);
+    file('css', m.css); file('icon', m.icon); file('actions', m.actions);
     if (m.page !== undefined) {
         if (typeof m.page !== 'object' || m.page === null) { problem(name, 'page must be an object'); }
         else { file('page.body', m.page.body); if (m.page.fit !== undefined && !['fill', 'flow'].includes(m.page.fit)) { problem(name, 'page.fit must be fill or flow'); } }
@@ -74,7 +74,7 @@ function check(dir) {
         else { for (const s of m.shared) { if (!fs.existsSync(path.join(dir, s))) { problem(name, 'shared names ' + s + ', which is not beside the package'); } } }
     }
     if (m.tags !== undefined && (!Array.isArray(m.tags) || m.tags.some(t => typeof t !== 'string'))) { problem(name, 'tags must be a list of text'); }
-    const known = ['name', 'title', 'version', 'description', 'license', 'src', 'css', 'page', 'window', 'handles', 'instances', 'actions', 'continuity', 'needs', 'wants', 'shared', 'tags'];
+    const known = ['name', 'title', 'version', 'description', 'license', 'src', 'css', 'icon', 'page', 'window', 'handles', 'instances', 'actions', 'continuity', 'needs', 'wants', 'shared', 'tags'];
     for (const k of Object.keys(m)) { if (!known.includes(k)) { problem(name, k + ' is not a manifest field'); } }
     return m;
 }

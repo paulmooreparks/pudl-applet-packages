@@ -28,6 +28,7 @@ const SHAPE = /^(0?\.[0-9]+|1(\.0+)?),(0?\.[0-9]+|1(\.0+)?)$/;
 const PIXELS = /^[1-9][0-9]*,[1-9][0-9]*$/;
 const SERVICES = ['snapshot', 'fs', 'config'];
 const SHARED = /^\.\.\/[A-Za-z0-9._-]+$/;
+const BUNDLE = /^\.\.\/[A-Za-z0-9._/-]+\.js$/;
 const problems = [];
 const problem = (pkg, text) => problems.push(pkg + ': ' + text);
 
@@ -74,7 +75,11 @@ function check(dir) {
         else { for (const s of m.shared) { if (!fs.existsSync(path.join(dir, s))) { problem(name, 'shared names ' + s + ', which is not beside the package'); } } }
     }
     if (m.tags !== undefined && (!Array.isArray(m.tags) || m.tags.some(t => typeof t !== 'string'))) { problem(name, 'tags must be a list of text'); }
-    const known = ['name', 'title', 'version', 'description', 'license', 'src', 'css', 'icon', 'page', 'window', 'handles', 'instances', 'actions', 'continuity', 'needs', 'wants', 'shared', 'tags'];
+    if (m.bundle !== undefined) {
+        if (!Array.isArray(m.bundle) || m.bundle.some(s => typeof s !== 'string' || !BUNDLE.test(s))) { problem(name, 'bundle may list only scripts beside the package, such as ../shared/input.js'); }
+        else { for (const s of m.bundle) { if (!fs.existsSync(path.join(dir, s))) { problem(name, 'bundle names ' + s + ', which is not beside the package'); } } }
+    }
+    const known = ['name', 'title', 'version', 'description', 'license', 'src', 'css', 'icon', 'page', 'window', 'handles', 'instances', 'actions', 'continuity', 'needs', 'wants', 'shared', 'bundle', 'tags'];
     for (const k of Object.keys(m)) { if (!known.includes(k)) { problem(name, k + ' is not a manifest field'); } }
     return m;
 }
@@ -115,6 +120,17 @@ for (const dir of dirs) {
 if (problems.length) { problems.forEach(p => console.error(p)); process.exit(1); }
 
 fs.rmSync(out, { recursive: true, force: true });
-for (const { dir, m } of packages) { copyDir(dir, path.join(out, m.name)); }
+for (const { dir, m } of packages) {
+    copyDir(dir, path.join(out, m.name));
+    /* The scripts a manifest bundles go in front of its src, so the
+       installed script is one file; the built manifest no longer says so. */
+    if (m.bundle && m.bundle.length) {
+        const parts = m.bundle.map(s => fs.readFileSync(path.join(dir, s), 'utf8')).concat(fs.readFileSync(path.join(dir, m.src), 'utf8'));
+        fs.writeFileSync(path.join(out, m.name, m.src), parts.join('\n'));
+        const built = Object.assign({}, m);
+        delete built.bundle;
+        fs.writeFileSync(path.join(out, m.name, 'applet.json'), JSON.stringify(built, null, 2) + '\n');
+    }
+}
 for (const s of shared) { copyDir(s, path.join(out, path.basename(s))); }
 console.log('packed ' + packages.map(p => p.m.name + ' ' + p.m.version).join(', ') + (shared.size ? ' with ' + [...shared].map(s => path.basename(s)).join(', ') : '') + ' into ' + out);

@@ -37,6 +37,7 @@
     "needs": { "$ref": "#/$defs/services", "description": "Host services the applet cannot run without; a host lacking one does not offer the applet." },
     "wants": { "$ref": "#/$defs/services", "description": "Host services the applet uses when they are there." },
     "shared": { "type": "array", "items": { "type": "string", "pattern": "^\\.\\./[A-Za-z0-9._-]+$" }, "description": "Folders beside the package that it loads from, such as ../shared, which a collection's build copies alongside it." },
+    "bundle": { "type": "array", "items": { "type": "string", "pattern": "^\\.\\./[A-Za-z0-9._/-]+\\.js$" }, "description": "Scripts beside the package, in order, that the build writes in front of src, so the installed script is one file and registers its applet as it loads, as PUDL requires. Not in the built manifest." },
     "tags": { "type": "array", "items": { "type": "string" } }
   },
   "$defs": {

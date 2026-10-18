@@ -1,0 +1,15 @@
+{
+  "name": "hello",
+  "title": "Hello",
+  "version": "0.1.0",
+  "description": "The smallest applet package: a greeting, a count of visits kept in ~, and one action.",
+  "license": "Apache-2.0",
+  "src": "hello.js",
+  "css": "hello.css",
+  "page": { "body": "page.html", "fit": "flow" },
+  "window": { "shape": "0.3,0.3", "min": "260,160" },
+  "actions": "actions.json",
+  "continuity": true,
+  "wants": ["fs"],
+  "tags": ["example"]
+}

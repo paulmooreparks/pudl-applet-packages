@@ -1,0 +1,11 @@
+{
+  "name": "pudl-applet-packages",
+  "version": "0.1.0",
+  "description": "The manifest format, host kit and packing tool for PUDL applet packages.",
+  "license": "Apache-2.0",
+  "author": "Paul Parks",
+  "repository": "github:paulmooreparks/pudl-applet-packages",
+  "bin": { "pudl-pack": "tools/pack.js" },
+  "files": ["kit", "schema", "tools", "examples", "README.md", "LICENSE"],
+  "scripts": { "pack-example": "node tools/pack.js examples" }
+}

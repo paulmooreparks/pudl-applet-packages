@@ -1,0 +1,25 @@
+{
+  "id": "example.hello",
+  "version": "0.1.0",
+  "apiVersion": 1,
+  "title": "Hello",
+  "description": "A greeting.",
+  "module": "actions.js",
+  "actions": [
+    {
+      "ref": "example.hello/greet@1",
+      "title": "Greet",
+      "description": "Give a greeting for a name.",
+      "inputSchema": {
+        "type": "object", "additionalProperties": false,
+        "properties": { "name": { "type": "string", "maxLength": 80, "default": "", "description": "Who to greet." } }
+      },
+      "outputSchema": {
+        "type": "object", "additionalProperties": false, "required": ["greeting"],
+        "properties": { "greeting": { "type": "string" } }
+      },
+      "capabilities": [],
+      "replay": "pure"
+    }
+  ]
+}

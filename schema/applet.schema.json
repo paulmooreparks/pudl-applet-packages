@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/paulmooreparks/pudl-applet-packages/schema/applet.schema.json",
+  "title": "PUDL applet package manifest",
+  "description": "applet.json, the one file a host reads from an installed applet package. Every file it names is relative to the package folder and inside it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "title", "version", "src"],
+  "properties": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$", "description": "The applet's name, which is also its folder's name, its window key and the last part of its page's address." },
+    "title": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1, "description": "The package version, which the host uses as the cache stamp of the applet's files." },
+    "description": { "type": "string" },
+    "license": { "type": "string", "description": "An SPDX identifier, such as Apache-2.0." },
+    "src": { "$ref": "#/$defs/file", "description": "The script, which calls pudlApplets.register(name, …)." },
+    "css": { "$ref": "#/$defs/file" },
+    "page": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "body": { "$ref": "#/$defs/file", "description": "An HTML fragment: the mount and any copy around it. Without it the host writes a bare mount." },
+        "fit": { "enum": ["fill", "flow"], "description": "How the applet fits its page, as PUDL's data-applet-fit." }
+      }
+    },
+    "window": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "shape": { "type": "string", "pattern": "^(0?\\.[0-9]+|1(\\.0+)?),(0?\\.[0-9]+|1(\\.0+)?)$", "description": "The window's first size as fractions of the desktop, \"w,h\", such as \"0.28,0.88\"." },
+        "min": { "$ref": "#/$defs/pixels", "description": "The smallest size a reader may give the window, \"w,h\" in pixels." },
+        "max": { "$ref": "#/$defs/pixels" }
+      }
+    },
+    "handles": { "type": "object", "description": "PUDL's requests the applet answers, as define()'s handles." },
+    "instances": { "type": "integer", "minimum": 1, "description": "How many instances requests may open, as define()'s instances." },
+    "actions": { "$ref": "#/$defs/file", "description": "The manifest of the actions the applet publishes." },
+    "continuity": { "type": "boolean", "default": false, "description": "Whether the host keeps the applet's state across pages, as it does for its own." },
+    "needs": { "$ref": "#/$defs/services", "description": "Host services the applet cannot run without; a host lacking one does not offer the applet." },
+    "wants": { "$ref": "#/$defs/services", "description": "Host services the applet uses when they are there." },
+    "shared": { "type": "array", "items": { "type": "string", "pattern": "^\\.\\./[A-Za-z0-9._-]+$" }, "description": "Folders beside the package that it loads from, such as ../shared, which a collection's build copies alongside it." },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "file": { "type": "string", "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$))[A-Za-z0-9._/-]+$" },
+    "pixels": { "type": "string", "pattern": "^[1-9][0-9]*,[1-9][0-9]*$" },
+    "services": { "type": "array", "items": { "enum": ["snapshot", "fs", "config"] } }
+  }
+}

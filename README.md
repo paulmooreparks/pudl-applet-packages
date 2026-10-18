@@ -37,6 +37,7 @@ An applet may use PUDL's runtime (`pudlApplets`, `pudlWindows`, the theme events
 | `identity(root, entries)` | the applet's first menu title, with the window's commands where it is in a window |
 | `action(root, selector, label)` | a menu item that presses a button in the applet |
 | `pages` | where applet pages are, such as `/page/` |
+| `pudl` | where the host's PUDL release is, such as `/pudl/`, for a document of the applet's own, such as a preview frame, that loads PUDL itself |
 | `snapshot` | `join(root, take)` and `leave`, state kept across a reload (optional) |
 | `fs` | `readText(path)`, `writeText(path, text)` and `mkdir(path)` under `~`, `onChange(fn)`, and where the host has file dialogs, `open(options)` and `save(options)` (optional, and each member optional within it) |
 | `config` | `load`, `get`, `set` and `onChange` for the applet's settings (optional) |

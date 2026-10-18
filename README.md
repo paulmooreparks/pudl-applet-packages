@@ -42,6 +42,7 @@ An applet may use PUDL's runtime (`pudlApplets`, `pudlWindows`, the theme events
 | `fs` | `readText(path)`, `writeText(path, text)` and `mkdir(path)` under `~`, `onChange(fn)`, and where the host has file dialogs, `open(options)` and `save(options)` (optional, and each member optional within it) |
 | `config` | `load`, `get`, `set` and `onChange` for the applet's settings (optional) |
 | `service(name)` | the address of a service the host offers under that name, ending in `/`, or `null` |
+| `fetch(url, init)` | `fetch` as the host's own pages call its server, with whatever such a request carries (such as a token against forgery); plain same-origin `fetch` where the host asks nothing more |
 
 `fs.open({ title, accept, start, host, check })` shows the host's own Open dialog and resolves to `{ path, name, text }` for one of the host's files, `{ name, text }` for one from the reader's computer, or `null`. `fs.save({ title, name, blob, start, host, check })` shows its Save as dialog, writes the blob, and resolves to `{ path }`, `{ download: name }` when the reader chose to download it, or `null`; it rejects with the reason a write failed. In both, `check(path)` gives the reason a file won't do, or `null`. `fs.onChange(fn)` calls `fn()` after any of the host's files changes, here or in another tab, and returns a function that stops it. An applet without `open` takes a file from the reader's computer, and without `save` downloads.
 

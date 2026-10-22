@@ -1,6 +1,6 @@
 # PUDL applet packages
 
-An applet package is a folder that any site or application built with [PUDL](https://github.com/paulmooreparks/pudl) can install by copying it into its web root. This repo holds what every package and every host share: the manifest format, the host kit, the packing tool and an example. The design it comes from is `Architecture/applet-packages-design.md` in the [parkscomputing](https://github.com/paulmooreparks/parkscomputing) repo.
+An applet package is a folder that any site or application built with [PUDL](https://github.com/paulmooreparks/pudl) can install by copying it into its web root. This repo holds what every package and every host share: the manifest format, the host kit, the packing tool and an example.
 
 ## A package
 
@@ -55,7 +55,7 @@ Nothing in a package may reach a host's own globals, a fixed `/api/` address, or
 
 ## A host
 
-A host that is a server scans `wwwroot/applets/*/applet.json` and writes from the manifests what it would otherwise write by hand: the `define()` of each applet, its page, its place in the launch menu, its action manifests and its continuity. The parkscomputing engine does this in `Pages/Services/AppletCatalog.cs`.
+A host that is a server scans `wwwroot/applets/*/applet.json` and writes from the manifests what it would otherwise write by hand: the `define()` of each applet, its page, its place in the launch menu, its action manifests and its continuity.
 
 A page with no server does it in the browser:
 
